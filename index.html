@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src = "https://ajax.aspnetcdn.com/ajax/knockout/knockout-3.1.0.js" 
+         type = "text/javascript"></script>
+    <title>Project Board</title>
+    <style>
+        .board {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px;
+        }
+        .column {
+            width: 30%;
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .card {
+            background: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .card .buttons {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .card .buttons button {
+            margin-left: 5px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px;
+            border-radius: 5px;
+            color: white;
+            margin-bottom: 5px;
+        }
+        .badge.high { background: #ff4d4d; }
+        .badge.medium { background: #ffa500; }
+        .badge.low { background: #90ee90; }
+    </style>
+</head>
+<body>
+    <div id="board" class="board" data-bind="foreach: columns">
+        <div class="column">
+            <h2 data-bind="text: name"></h2>
+            <div data-bind="foreach: tasks">
+                <div class="card">
+                    <div data-bind="css: priorityClass, text: priority"></div>
+                    <h3 data-bind="text: title"></h3>
+                    <p data-bind="text: description"></p>
+                    <div class="buttons">
+                        <button data-bind="click: moveLeft, enable: colIndex() > 0 ">←</button>
+                        <button data-bind="click: moveRight, enable: colIndex() < 2">→</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function Task(id, title, description, priority, colIndex) {
+            this.title = title;
+            this.description = description;
+            this.priority = priority;
+            this.priorityClass = ko.computed(() => {
+                return `badge ${priority.toLowerCase()}`;
+            });
+			this.colIndex = ko.observable(colIndex);
+			this.id = id;
+        }
+
+        function Column(name, tasks) {
+            this.name = name;
+            this.tasks = ko.observableArray(tasks);
+			
+			 this.sortTasksById = function() {
+                this.tasks.sort(function(a, b) {
+                    return a.id - b.id;
+                });
+            };
+
+            this.sortTasksById();
+        }
+
+        function BoardViewModel() {
+            var self = this;
+            self.columns = ko.observableArray([
+                new Column('TODO', [
+                    new Task(1, 'Update User Profile Page', 'Description for Task 1', 'HIGH', 0),
+                    new Task(2, 'Fix Login Authentication Issue', 'Description for Task 2', 'HIGH', 0),
+                    new Task(3, 'Implement Responsive Design', 'Description for Task 3', 'MEDIUM', 0),
+                    new Task(4, 'Create API Documentation', 'Description for Task 4', 'LOW', 0)
+                ]),
+                new Column('IN PROGRESS', [
+                    new Task(5, 'Refactor Database Schema', 'Description for Task 5', 'LOW', 1),
+                    new Task(6, 'Add Notification Feature', 'Description for Task 6', 'HIGH', 1)
+                ]),
+                new Column('DONE', [
+                    new Task(7, 'Optimize Image Loading', 'Description for Task 7', 'LOW', 2),
+                    new Task(8, 'Implement User Feedback Form', 'Description for Task 8', 'HIGH', 2),
+                    new Task(9, 'Resolve Cross-Browser Compatibility', 'Description for Task 9', 'MEDIUM', 2)
+                ])
+            ]);
+
+            moveLeft = function(task) {
+                var columnIndex = task.colIndex();
+                if (columnIndex > 0) {
+                    self.columns()[columnIndex].tasks.remove(task);
+                    self.columns()[columnIndex - 1].tasks.push(task);
+					task.colIndex(columnIndex - 1);
+					self.columns()[columnIndex - 1].sortTasksById();
+                }
+            };
+
+            moveRight = function(task) {
+                var columnIndex = task.colIndex();
+                if (columnIndex < self.columns().length - 1) {
+                    self.columns()[columnIndex].tasks.remove(task);
+                    self.columns()[columnIndex + 1].tasks.push(task);
+					task.colIndex(columnIndex + 1);
+					self.columns()[columnIndex + 1].sortTasksById();
+                }
+            };
+			
+
+        }
+
+        ko.applyBindings(new BoardViewModel());
+    </script>
+</body>
+</html>
